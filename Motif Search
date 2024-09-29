@@ -1,0 +1,46 @@
+from itertools import product, combinations
+
+def hamming_distance(s1, s2):
+    return sum(el1 != el2 for el1, el2 in zip(s1, s2))
+
+def generate_mutations(motif, d):
+    mutations = set()
+    alphabet = 'ACGT'  # Adjust based on your sequences
+    length = len(motif)
+    
+    for positions in combinations(range(length), d):
+        for replacements in product(alphabet, repeat=d):
+            mutated = list(motif)
+            for pos, repl in zip(positions, replacements):
+                mutated[pos] = repl
+            mutations.add(''.join(mutated))
+    
+    return mutations
+
+def find_motifs(sequences, l, epsilon, d):
+    n = len(sequences)
+    threshold = int(epsilon * n)
+    motif_count = {}
+    motif_positions = {}
+
+    for seq_index, seq in enumerate(sequences):
+        for start in range(len(seq) - l + 1):
+            motif = seq[start:start + l]
+            mutations = generate_mutations(motif, d)
+            for mutation in mutations:
+                if mutation not in motif_count:
+                    motif_count[mutation] = 0
+                    motif_positions[mutation] = []
+                for check_index, check_seq in enumerate(sequences):
+                    if hamming_distance(mutation, check_seq[start:start + l]) <= d:
+                        motif_count[mutation] += 1
+                        motif_positions[mutation].append((check_index, start))
+
+    valid_motifs = {motif: positions for motif, positions in motif_positions.items() if motif_count[motif] >= threshold}
+    
+    return valid_motifs
+
+# Example usage
+sequences = ["ACGTAGCTA", "ACGTCGTA", "ACGTTGTA", "ACGTAGCTG"]
+motifs = find_motifs(sequences, l=4, epsilon=0.5, d=1)
+print(motifs)
